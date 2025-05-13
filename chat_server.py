@@ -21,21 +21,36 @@ def connect_socket_client(conn, address):
                 break
             
             print("Client connected" + str(address) + ": " + str(data))
-
-            if data.startswith('client_name'):
-                pass
-            else:
-                for client in socket_clients.items():
-                    connection = client["conn"]
-                    if connection != conn:
-                        print("Sending to client " + str(client["address"]))
-                        connection.send(data.encode())
-                    
             if data.lower() == 'bye':
                 print("Client " + str(address) + " disconnected")
                 conn.close()
                 socket_clients.remove(client)
                 break
+
+            if data.startswith('@'):
+                receiver_user = data.split(' ')[0][1:]
+
+                message = data.split(' ')[1:]
+                message = ' '.join(message)
+                data = f"{str(client_name)} ->: {message}"
+                client_receiver = socket_clients.get(receiver_user, None)
+
+                if client_receiver:
+                    print(f"Client found: {client_receiver}")
+                    
+                    receiver_conn = client_receiver["conn"]
+
+                    print("Sending to client " + str(client_receiver))
+                    receiver_conn.send(data.encode())
+
+                    
+            else:
+                for client in socket_clients.keys():
+                    connection = socket_clients[client]["conn"]
+                    if connection != conn:
+                        print("Sending to client " + str(client))
+                        connection.send(data.encode())
+                        
         conn.close()
         
     return threading.Thread(target=thread_func, args=())
